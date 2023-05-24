@@ -4,10 +4,12 @@ import json
 from requests import HTTPError
 from pandas import DataFrame, read_csv
 
+# Configure the logging format and level
 logging.basicConfig(
     format='%(asctime)s %(levelname)s:%(message)s',
     level=logging.INFO)
 
+# Class for data extraction
 class Extract:
 
     def __init__(self, file_path, chunks, chunk_size=1000) -> None:
@@ -29,6 +31,7 @@ class Extract:
             return self.read_whole()
 
     def read_as_chunks(self):
+        # Read the CSV file in chunks
         first_df = read_csv(self._file_path, dtype=self._data_types, skiprows=0, nrows=self._chunk_size, parse_dates=['Date Rptd', 'DATE OCC'])
         yield first_df
         move_on = True
@@ -40,16 +43,18 @@ class Extract:
                 move_on = False
 
     def read_whole(self):
+        # Read the entire CSV file
         df = read_csv(self._file_path, dtype=self._data_types, parse_dates=['Date Rptd', 'DATE OCC'])
         return df
         
-
+# Class for data transformation
 class Transform:
 
     def __init__(self, df: DataFrame) -> None:
         self._dataframe = df
 
     def change_column_names(self):
+        # Change column names to lowercase and replace spaces with underscores
         cols = self._dataframe.columns
         col_names_to_update = {}
         for col in cols:
@@ -60,16 +65,19 @@ class Transform:
         return self
 
     def set_dtypes(self):
-
+        # Set data types for columns
         return self
 
     def execute_all(self):
+        # Execute all transformation steps
         return self.change_column_names(self).set_dtypes(self)
     
     @property
     def dataframe(self) -> DataFrame:
+        # Property for accessing the transformed DataFrame
         return self._dataframe
 
+# Class for data loading
 class Load:
 
     def __init__(self, url: str) -> None:
@@ -77,6 +85,7 @@ class Load:
         self._counter = 0
 
     def to_sqlite(self, df: DataFrame):
+        # Convert DataFrame to JSON records and send them to an API endpoint
         json_dict = json.loads(df.to_json(orient='records'))
         for data in json_dict:
             if self._counter%10 == 0:
@@ -94,6 +103,7 @@ class Load:
                 self._counter += 1
 
 def etl():
+    # runs etl-workflow
     file_path = './data/crime_data.csv'
     url = 'http://127.0.0.1:8000/crimes'
     load = Load(url)
